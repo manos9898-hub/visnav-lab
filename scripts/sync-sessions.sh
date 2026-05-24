@@ -12,8 +12,20 @@ BUCKET="visual-navigation-sessions"
 SESSIONS_DIR="/home/ubuntu/lab/sessions"
 WORKSPACES_DIR="/home/ubuntu/lab/workspaces"
 LOG="/home/ubuntu/lab/sync-sessions.log"
+MIN_FREE_GB=5
 
 log() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*" | tee -a "$LOG"; }
+
+check_disk_space() {
+  local free_kb
+  free_kb=$(df --output=avail "$SESSIONS_DIR" | tail -1)
+  local free_gb=$(( free_kb / 1024 / 1024 ))
+  log "Disk free: ${free_gb} GB (minimum required: ${MIN_FREE_GB} GB)"
+  if [ "$free_gb" -lt "$MIN_FREE_GB" ]; then
+    log "ERROR: insufficient disk space — ${free_gb} GB free, need at least ${MIN_FREE_GB} GB. Aborting."
+    exit 1
+  fi
+}
 
 process_session() {
   local basename="$1"
@@ -38,6 +50,8 @@ process_session() {
   unzip -q "$SESSIONS_DIR/$basename" -d "$workspace"
   log "DONE $basename"
 }
+
+check_disk_space
 
 if [ -n "$1" ]; then
   process_session "$(basename "$1")"
