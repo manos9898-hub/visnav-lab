@@ -1,0 +1,9 @@
+sessions/
+workspaces/
+exports/
+*.zip
+*.opus
+*.jpg
+*.png
+*.ndjson
+sync-sessions.log
