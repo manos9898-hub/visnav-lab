@@ -7,3 +7,5 @@ exports/
 *.png
 *.ndjson
 sync-sessions.log
+__pycache__/
+*.pyc
