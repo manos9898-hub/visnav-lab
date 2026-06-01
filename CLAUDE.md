@@ -12,6 +12,9 @@ One script does everything — always use it:
 python3 /home/ubuntu/lab/scripts/prepare_session.py --camera-height 116
 ```
 
+If the user does not provide camera height, ask for it before running. Do not
+assume 116 cm or any other default.
+
 This handles in order: S3 download, extraction, frame orientation fix, B1 clip
 selection, B2 overlay generation. The session will appear in the review app when
 it completes.
