@@ -1,0 +1,13 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>VisNav GT Review</title>
+<body style="font-family:system-ui;padding:2rem">
+<h1>VisNav Ground-Truth Review</h1>
+<p>Placeholder. Full picker + review UI to be built in this directory.</p>
+<pre id="out">loading sessions…</pre>
+<script>
+fetch('/api/sessions').then(r=>r.json())
+  .then(d=>document.getElementById('out').textContent =
+    d.length ? JSON.stringify(d,null,2) : 'No sessions ready to view yet (run Plan B).');
+</script>
+</body>

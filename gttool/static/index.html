@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- user-scalable=no removed — OS/browser accessibility zoom must be respected -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VisNav GT Review</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #000000;
+      --surface:   #0d0f0e;
+      --surface2:  #141714;
+      --border:    #2a2e2a;
+      --text:      #d8ddd8;
+      --muted:     #6b716b;
+      --green:     #22c55e;
+      --green-dim: rgba(34,197,94,0.18);
+      --red:       #ef4444;
+      --red-dim:   rgba(239,68,68,0.18);
+      --amber:     #f59e0b;
+      /* Width of the flanking nav buttons */
+      --nav-w:     3em;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Never fix html font-size in px — let the OS/browser preference win */
+    html {
+      height: 100%;
+      background: #000;
+    }
+    body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      overflow: hidden;
+    }
+
+    /* ══════════════════════════════════════════
+       PICKER
+    ══════════════════════════════════════════ */
+    #picker {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--bg);
+    }
+
+    .picker-head {
+      padding: 2.25rem 1.5rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .picker-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.5rem, 6vw, 2.25rem);
+      font-weight: 800;
+      color: var(--green);
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+    .picker-sub {
+      font-size: clamp(0.65rem, 2vw, 0.8rem);
+      color: var(--muted);
+      margin-top: 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .session-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: var(--bg);
+    }
+
+    .session-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+      -webkit-user-select: none;
+    }
+    .session-card:hover  { border-color: var(--green); }
+    .session-card:active { transform: scale(0.985); background: var(--surface2); }
+
+    .s-uuid  { font-size: clamp(0.6rem, 1.8vw, 0.75rem); color: var(--muted); margin-bottom: 1rem; word-break: break-all; }
+    .s-stats { display: flex; gap: 2rem; margin-bottom: 1.25rem; }
+    .s-stat  { display: flex; flex-direction: column; gap: 0.15rem; }
+    .s-val   { font-size: clamp(1.2rem, 4vw, 1.5rem); font-weight: 500; color: var(--text); }
+    .s-lbl   { font-size: clamp(0.6rem, 1.8vw, 0.75rem); color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+    .s-bar   { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .s-fill  { height: 100%; background: var(--green); }
+    .s-foot  { font-size: clamp(0.6rem, 1.8vw, 0.75rem); color: var(--muted); margin-top: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .empty {
+      padding: 4rem 1.5rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: clamp(0.8rem, 2.5vw, 1rem);
+      line-height: 2.2;
+    }
+
+    /* ══════════════════════════════════════════
+       REVIEW
+    ══════════════════════════════════════════ */
+    #review {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      background: var(--bg);
+    }
+
+    /* ── Header ── */
+    .rev-head {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      background: var(--bg);
+    }
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: clamp(0.75rem, 2.5vw, 0.9rem);
+      padding: 0.4rem 0;
+      flex-shrink: 0;
+      min-height: 44px;   /* WCAG 2.1 minimum touch target */
+      display: flex;
+      align-items: center;
+    }
+    .back-btn:hover { color: var(--text); }
+
+    .rev-prog { flex: 1; min-width: 0; }
+    .rev-count {
+      font-size: clamp(0.65rem, 2vw, 0.8rem);
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rev-bar  { height: 3px; background: var(--border); border-radius: 2px; }
+    .rev-fill { height: 100%; background: var(--green); transition: width 0.25s; }
+
+    .save-btn {
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: clamp(0.65rem, 2vw, 0.8rem);
+      padding: 0.5rem 0.85rem;
+      border-radius: 5px;
+      cursor: pointer;
+      flex-shrink: 0;
+      min-height: 44px;   /* WCAG touch target */
+    }
+    .save-btn.dirty { border-color: var(--amber); color: var(--amber); }
+
+    /*
+      Layout of the review body (everything below the header):
+
+        [     black padding     ]
+        [ ← ] [ centre-col ] [ → ]
+        [     black padding     ]
+
+      The centre-col contains:
+        - image (aspect-ratio 3/4, fills available height)
+        - info strip (frame number + status badge, below image)
+        - controls (Reject / Accept, centred, black/white)
+
+      The ← / → nav buttons are positioned so they sit flush against
+      the left and right edges of the image, not the page edges.
+    */
+
+    /* Outer flex row — full remaining height, centres the column */
+    .frame-row {
+      flex: 1;
+      display: flex;
+      align-items: center;        /* vertically centre the image column */
+      justify-content: center;    /* horizontally centre on page */
+      overflow: hidden;
+      min-height: 0;
+      background: var(--bg);
+      padding: 0.5rem 0;
+    }
+
+    /*
+      The centre column: image + info strip + controls.
+      Width is driven by the image's aspect ratio and available height.
+      We use a CSS trick: the column is as wide as the image is tall × (3/4).
+    */
+    .centre-col {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      height: 100%;
+      /* Width = height × (3/4) — matches portrait image aspect ratio */
+      width: calc((100vh - 8rem) * 3 / 4);
+      max-width: min(90vw, 480px);
+      min-width: 200px;
+      position: relative;         /* anchor for the flanking nav buttons */
+    }
+
+    /* Nav buttons — absolutely positioned against centre-col edges */
+    .btn-nav {
+      position: absolute;
+      top: 0;
+      /* tall as the image only — not the info strip or controls below */
+      height: var(--img-h, 100%);
+      width: var(--nav-w);
+      border: none;
+      background: #000;
+      color: #fff;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(1.2rem, 4vw, 2rem);
+      font-weight: 500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35em;
+      transition: background 0.12s;
+      z-index: 10;
+    }
+    #btn-prev { right: 100%; }   /* flush against left edge of centre-col */
+    #btn-next { left:  100%; }   /* flush against right edge of centre-col */
+
+    .btn-nav:hover:not(:disabled)  { background: #161616; }
+    .btn-nav:active:not(:disabled) { background: #1f1f1f; }
+    .btn-nav:disabled { opacity: 0.18; cursor: default; }
+
+    .btn-nav-lbl {
+      font-size: clamp(0.5rem, 1.5vw, 0.65rem);
+      color: #fff;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.65;
+    }
+
+    /* Image wrapper — fills the column, portrait aspect ratio */
+    .frame-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+    }
+    #frame-img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+      background: #000;
+    }
+    #overlay-canvas {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      width: 100%; height: 100%;
+    }
+    .f-loader {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted);
+      font-size: clamp(0.7rem, 2.2vw, 0.9rem);
+      background: #000;
+    }
+
+    /* Info strip — below the image, inside centre-col */
+    .frame-info {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.4rem 0.2rem;
+      background: var(--bg);
+    }
+    .info-num {
+      font-size: clamp(0.65rem, 2vw, 0.8rem);
+      color: var(--muted);
+    }
+    .info-badge {
+      font-size: clamp(0.65rem, 2vw, 0.8rem);
+      font-weight: 500;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .b-unreviewed { color: var(--muted);  background: var(--surface2); }
+    .b-accepted   { color: var(--green);  background: rgba(34,197,94,0.15); }
+    .b-rejected   { color: var(--red);    background: rgba(239,68,68,0.15); }
+    .b-corrected  { color: var(--amber);  background: rgba(245,158,11,0.15); }
+
+    /* Controls — centred to the page, black background, white text */
+    .controls {
+      flex-shrink: 0;
+      padding: 0.5rem 0 0.75rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.45rem;
+      background: var(--bg);
+      width: 100%;
+    }
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    .btn {
+      flex: 1;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #000;
+      color: #fff;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      transition: background 0.1s, opacity 0.1s;
+      -webkit-user-select: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.2rem;
+      padding: 1.1rem 1rem;
+      min-height: 72px;
+    }
+    .btn:hover:not(:disabled)  { background: #111; }
+    .btn:active { opacity: 0.75; }
+
+    /* Accept gets a white border to stand out, reject stays subtle */
+    .btn-accept {
+      border-color: #fff;
+      flex: 2;
+      font-size: clamp(1.3rem, 4vw, 1.6rem);
+    }
+    .btn-accept-lbl {
+      font-size: clamp(0.65rem, 2vw, 0.78rem);
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #fff;
+    }
+
+    .btn-reject {
+      font-size: clamp(1.3rem, 4vw, 1.6rem);
+    }
+    .btn-reject-lbl {
+      font-size: clamp(0.65rem, 2vw, 0.78rem);
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #999;
+    }
+
+    .key-hint {
+      text-align: center;
+      font-size: clamp(0.6rem, 1.8vw, 0.72rem);
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    /* Keyboard / accessibility focus ring */
+    :focus-visible {
+      outline: 2px solid var(--green);
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════ PICKER ═══════════════════════════════════════════════ -->
+<div id="picker">
+  <div class="picker-head">
+    <div class="picker-title">VisNav GT</div>
+    <div class="picker-sub">Ground Truth Review</div>
+  </div>
+  <div id="session-list" class="session-list">
+    <div class="empty">Loading sessions…</div>
+  </div>
+</div>
+
+<!-- ═══════ REVIEW ════════════════════════════════════════════════ -->
+<div id="review">
+
+  <div class="rev-head">
+    <button class="back-btn" onclick="showPicker()">← Sessions</button>
+    <div class="rev-prog">
+      <div class="rev-count" id="rev-count">— / —</div>
+      <div class="rev-bar"><div class="rev-fill" id="rev-fill" style="width:0%"></div></div>
+    </div>
+    <button class="save-btn" id="save-btn" onclick="saveLabels()">Save</button>
+  </div>
+
+  <!-- Centred layout: nav buttons are positioned against the image edges -->
+  <div class="frame-row">
+    <div class="centre-col">
+
+      <!-- Prev / Next — absolutely positioned flush to image edges -->
+      <button class="btn-nav" id="btn-prev" onclick="navigate(-1)" aria-label="Previous frame">
+        ←
+        <span class="btn-nav-lbl">Prev</span>
+      </button>
+      <button class="btn-nav" id="btn-next" onclick="navigate(1)" aria-label="Next frame">
+        →
+        <span class="btn-nav-lbl">Next</span>
+      </button>
+
+      <!-- Image -->
+      <div class="frame-wrap" id="frame-wrap">
+        <img id="frame-img" alt="Review frame">
+        <canvas id="overlay-canvas"></canvas>
+        <div class="f-loader" id="f-loader">loading…</div>
+      </div>
+
+      <!-- Info strip — below image, not overlaid -->
+      <div class="frame-info">
+        <span class="info-num" id="hud-num">—</span>
+        <span class="info-badge b-unreviewed" id="hud-badge">unreviewed</span>
+      </div>
+
+      <!-- Accept / Reject — centred, black & white -->
+      <div class="controls">
+        <div class="btn-row">
+          <button class="btn btn-reject" onclick="doReject()">
+            ✕
+            <span class="btn-reject-lbl">Reject</span>
+          </button>
+          <button class="btn btn-accept" onclick="doAccept()">
+            ✓
+            <span class="btn-accept-lbl">Accept</span>
+          </button>
+        </div>
+        <div class="key-hint">A = accept · R = reject · ← → = navigate · S = save</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const S = {
+  uuid: null,
+  manifest: null,
+  labels: {},
+  idx: 0,
+  dirty: false,
+  autoCount: 0,
+};
+
+const el  = id => document.getElementById(id);
+const img = el('frame-img');
+const cvs = el('overlay-canvas');
+const ctx = cvs.getContext('2d');
+
+// ── Picker ─────────────────────────────────────────────────────────────────
+async function loadSessions() {
+  const list = el('session-list');
+  list.innerHTML = '<div class="empty">Loading sessions…</div>';
+  try {
+    const sessions = await fetch('/api/sessions').then(r => r.json());
+    if (!sessions.length) {
+      list.innerHTML = '<div class="empty">No sessions ready to review.<br>Run gt_select_clips → gt_overlay (Plan B) first.</div>';
+      return;
+    }
+    list.innerHTML = sessions.map(s => {
+      const pct = s.n_frames_selected
+        ? Math.round(s.n_reviewed / s.n_frames_selected * 100) : 0;
+      return `
+        <div class="session-card" onclick="openSession('${s.uuid}')">
+          <div class="s-uuid">${s.uuid}</div>
+          <div class="s-stats">
+            <div class="s-stat">
+              <div class="s-val">${s.n_frames_selected || 0}</div>
+              <div class="s-lbl">Frames</div>
+            </div>
+            <div class="s-stat">
+              <div class="s-val">${s.n_clips || 0}</div>
+              <div class="s-lbl">Clips</div>
+            </div>
+            <div class="s-stat">
+              <div class="s-val">${s.n_reviewed || 0}</div>
+              <div class="s-lbl">Reviewed</div>
+            </div>
+          </div>
+          <div class="s-bar">
+            <div class="s-fill" style="width:${pct}%"></div>
+          </div>
+          <div class="s-foot">${s.stage || 'overlaid'} · ${pct}% complete</div>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = `<div class="empty">Cannot reach the API.<br>${e.message}</div>`;
+  }
+}
+
+function showPicker() {
+  if (S.dirty) saveLabels();
+  document.removeEventListener('keydown', onKey);
+  el('picker').style.display = 'flex';
+  el('review').style.display = 'none';
+  loadSessions();
+}
+
+// ── Open session ───────────────────────────────────────────────────────────
+async function openSession(uuid) {
+  S.uuid = uuid;
+  el('picker').style.display = 'none';
+  el('review').style.display = 'flex';
+
+  const [manifest, saved] = await Promise.all([
+    fetch(`/api/session/${uuid}/manifest`).then(r => r.json()),
+    fetch(`/api/session/${uuid}/labels`).then(r => r.json()).catch(() => null),
+  ]);
+
+  S.manifest  = manifest;
+  S.labels    = {};
+  S.idx       = 0;
+  S.autoCount = 0;
+  setDirty(false);
+
+  manifest.frames.forEach(f => {
+    const fn = String(f.frame_number);
+    const sv = saved?.frames?.[fn];
+    S.labels[fn] = sv || {
+      status: 'unreviewed',
+      clear_polygon: f.clear_polygon || [],
+      obstacles: [],
+    };
+  });
+
+  const first = manifest.frames.findIndex(
+    f => S.labels[String(f.frame_number)].status === 'unreviewed'
+  );
+  S.idx = first >= 0 ? first : 0;
+
+  document.addEventListener('keydown', onKey);
+  renderFrame();
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function navigate(delta) {
+  const next = S.idx + delta;
+  if (next < 0 || next >= S.manifest.frames.length) return;
+  S.idx = next;
+  renderFrame();
+}
+
+function renderFrame() {
+  const frames   = S.manifest.frames;
+  const f        = frames[S.idx];
+  const fn       = String(f.frame_number);
+  const label    = S.labels[fn];
+  const reviewed = Object.values(S.labels).filter(l => l.status !== 'unreviewed').length;
+  const total    = frames.length;
+
+  el('rev-count').textContent = `${S.idx + 1} / ${total}  ·  ${reviewed} reviewed`;
+  el('rev-fill').style.width  = (reviewed / total * 100) + '%';
+
+  el('btn-prev').disabled = S.idx === 0;
+  el('btn-next').disabled = S.idx === total - 1;
+
+  el('hud-num').textContent = `frame ${f.frame_number}`;
+  setHudBadge(label.status);
+
+  el('f-loader').style.display = 'flex';
+  clearCanvas();
+  img.onload = () => {
+    el('f-loader').style.display = 'none';
+    if (label.status === 'rejected') {
+      drawRejected();
+    } else {
+      drawPolygon(label.clear_polygon);
+    }
+  };
+  img.onerror = () => { el('f-loader').textContent = 'image not found'; };
+  img.src = `/api/session/${S.uuid}/frame/${f.frame_number}`;
+}
+
+function sizeCanvas() {
+  const rect = el('frame-wrap').getBoundingClientRect();
+  const dpr  = window.devicePixelRatio || 1;
+  cvs.width  = rect.width  * dpr;
+  cvs.height = rect.height * dpr;
+  cvs.style.width  = rect.width  + 'px';
+  cvs.style.height = rect.height + 'px';
+  ctx.scale(dpr, dpr);
+  return rect;
+}
+
+function drawPolygon(polygon) {
+  const rect = sizeCanvas();
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  if (!polygon || polygon.length < 3) return;
+  ctx.beginPath();
+  ctx.moveTo(polygon[0][0] * rect.width, polygon[0][1] * rect.height);
+  for (let i = 1; i < polygon.length; i++) {
+    ctx.lineTo(polygon[i][0] * rect.width, polygon[i][1] * rect.height);
+  }
+  ctx.closePath();
+  ctx.fillStyle   = 'rgba(34,197,94,0.28)';
+  ctx.strokeStyle = 'rgba(34,197,94,0.9)';
+  ctx.lineWidth   = 2.5;
+  ctx.fill();
+  ctx.stroke();
+}
+
+function drawRejected() {
+  const rect = sizeCanvas();
+  ctx.fillStyle = 'rgba(239,68,68,0.22)';
+  ctx.fillRect(0, 0, rect.width, rect.height);
+}
+
+function clearCanvas() { cvs.width = cvs.height = 0; }
+
+function setHudBadge(status) {
+  const b = el('hud-badge');
+  b.className   = `hud-badge b-${status}`;
+  b.textContent = status;
+}
+
+// ── Actions ────────────────────────────────────────────────────────────────
+function doAccept() {
+  const fn = String(S.manifest.frames[S.idx].frame_number);
+  S.labels[fn].status = 'accepted';
+  setDirty(true);
+  setHudBadge('accepted');
+  maybeAutoSave();
+  advanceToNext();
+}
+
+function doReject() {
+  const fn = String(S.manifest.frames[S.idx].frame_number);
+  S.labels[fn].status = 'rejected';
+  setDirty(true);
+  setHudBadge('rejected');
+  drawRejected();
+  maybeAutoSave();
+  advanceToNext();
+}
+
+function advanceToNext() {
+  const frames = S.manifest.frames;
+  for (let i = S.idx + 1; i < frames.length; i++) {
+    if (S.labels[String(frames[i].frame_number)].status === 'unreviewed') {
+      S.idx = i; renderFrame(); return;
+    }
+  }
+  for (let i = S.idx - 1; i >= 0; i--) {
+    if (S.labels[String(frames[i].frame_number)].status === 'unreviewed') {
+      S.idx = i; renderFrame(); return;
+    }
+  }
+  const reviewed = Object.values(S.labels).filter(l => l.status !== 'unreviewed').length;
+  el('rev-count').textContent = `${frames.length} / ${frames.length}  ·  All ${reviewed} reviewed ✓`;
+  saveLabels();
+}
+
+// ── Save ───────────────────────────────────────────────────────────────────
+function setDirty(val) {
+  S.dirty = val;
+  const btn = el('save-btn');
+  btn.classList.toggle('dirty', val);
+  btn.textContent = val ? 'Save *' : 'Save';
+}
+
+function maybeAutoSave() {
+  if (++S.autoCount >= 15) { S.autoCount = 0; saveLabels(); }
+}
+
+async function saveLabels() {
+  if (!S.uuid || !S.dirty) return;
+  el('save-btn').textContent = 'Saving…';
+  try {
+    const r = await fetch(`/api/session/${S.uuid}/labels`, {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify({frames: S.labels}),
+    });
+    if (!r.ok) throw new Error(r.statusText);
+    setDirty(false);
+  } catch {
+    el('save-btn').textContent = 'Error!';
+    setTimeout(() => { if (S.dirty) setDirty(true); }, 2000);
+  }
+}
+
+// ── Keyboard ───────────────────────────────────────────────────────────────
+function onKey(e) {
+  if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  { e.preventDefault(); navigate(1); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp'){ e.preventDefault(); navigate(-1); }
+  else if (e.key.toLowerCase() === 'a') doAccept();
+  else if (e.key.toLowerCase() === 'r') doReject();
+  else if (e.key.toLowerCase() === 's') saveLabels();
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+loadSessions();
+</script>
+</body>
+</html>
