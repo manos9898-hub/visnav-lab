@@ -1,5 +1,9 @@
 # Lab Project
 
+> The Android app (VisNav5) lives at `/home/ubuntu/visnav5/`. For anything
+> app- or build-related, read `/home/ubuntu/visnav5/CLAUDE.md` and work
+> from there.
+
 This is a separate project from visnav5. Do not mix concerns between the two.
 visnav5 lives at `/home/ubuntu/visnav5/` — Android app code only.
 Lab lives at `/home/ubuntu/lab/` — ground-truth pipeline, review tooling, and session data.
